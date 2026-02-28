@@ -14,11 +14,12 @@ Return ONLY valid JSON in this format:
   "sector": string or null,
   "year": integer or null,
   "quarter": integer (1-4) or null,
-  "metric": "pipeline_summary" or "revenue_service"
+  "metric": "pipeline_summary" or "revenue_service" or "combined_overview"
 }
 
 Rules:
 - If user asks about revenue, billed, collected, receivable, AR → revenue_summary
+- If user asks about overall performance, business health, overall status → combined_overview
 - Otherwise → pipeline_summary
 - If sector not mentioned → null
 - If quarter not mentioned → null

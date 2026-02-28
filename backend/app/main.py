@@ -13,6 +13,7 @@ from app.services.analytics import generate_founder_summary
 from app.services.analytics import compute_revenue_summary
 
 app = FastAPI()
+last_intent = {}
 
 class AskRequest(BaseModel):
     question: str
@@ -103,7 +104,31 @@ async def ask_question(request: AskRequest):
         intent = simple_intent_parser(request.question)
         trace_steps.append("Gemini failed — used rule-based fallback")
 
+    global last_intent
+
+    # Inherit previous context if missing
+    if intent.get("sector") is None and last_intent.get("sector"):
+        intent["sector"] = last_intent["sector"]
+
+    if intent.get("year") is None and last_intent.get("year"):
+        intent["year"] = last_intent["year"]
+
+    if intent.get("quarter") is None and last_intent.get("quarter"):
+        intent["quarter"] = last_intent["quarter"]
+
+    last_intent = intent
+
     trace_steps.append(f"Parsed intent: {intent}")
+
+    # Clarifying question if quarter/year missing for pipeline queries
+    if intent.get("metric") == "pipeline_summary":
+        if not intent.get("year") or not intent.get("quarter"):
+            return {
+                "question": request.question,
+                "intent": intent,
+                "answer": "Which year and quarter are you referring to? (Example: Q1 2026)",
+                "trace": trace_steps
+            }
 
     # Fetch data
     data = await fetch_board_items(DEALS_BOARD_ID)
@@ -151,11 +176,48 @@ async def ask_question(request: AskRequest):
             f"Collection rate: {summary['collection_rate_percent']}%."
         )
 
+    elif "combined" in metric:
+        # Fetch Deals
+        deals_data = await fetch_board_items(DEALS_BOARD_ID)
+        trace_steps.append("Fetched deals board via monday.com API")
+
+        deals_board = deals_data["data"]["boards"][0]
+        normalized_deals = normalize_board_response(deals_board)
+        trace_steps.append(f"Normalized {len(normalized_deals)} deals")
+
+        pipeline_summary = compute_pipeline_summary(normalized_deals)
+
+        # Fetch Work Orders
+        wo_data = await fetch_board_items(WORK_ORDERS_BOARD_ID)
+        trace_steps.append("Fetched work orders board via monday.com API")
+
+        wo_board = wo_data["data"]["boards"][0]
+        normalized_wo = normalize_board_response(wo_board)
+        trace_steps.append(f"Normalized {len(normalized_wo)} work orders")
+
+        revenue_summary = compute_revenue_summary(normalized_wo)
+
+        answer = (
+            f"Overall business snapshot: "
+            f"Pipeline: ₹{pipeline_summary['total_pipeline_value']:,.0f}. "
+            f"Billed: ₹{revenue_summary['total_billed']:,.0f}. "
+            f"Outstanding receivables: ₹{revenue_summary['total_receivable']:,.0f}. "
+            f"Collection rate: {revenue_summary['collection_rate_percent']}%."
+        )
+
+        summary = {
+            "pipeline": pipeline_summary,
+            "revenue": revenue_summary
+        }
+
     else:
         summary = compute_pipeline_summary(filtered)
         trace_steps.append("Computed deterministic pipeline summary")
 
         answer = generate_founder_summary(intent, summary)
+
+        if summary["excluded_null_value_count"] > 0:
+            answer += f" Note: {summary['excluded_null_value_count']} deals were excluded due to missing value data."
         
     return {
         "question": request.question,

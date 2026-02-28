@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 from app.services.monday_client import fetch_board_items
+from app.config import DEALS_BOARD_ID
+from app.config import WORK_ORDERS_BOARD_ID
 from app.services.normalization import normalize_board_response
 from app.services.analytics import compute_pipeline_summary
 from app.services.analytics import filter_by_sector
-from app.config import DEALS_BOARD_ID
-from app.config import WORK_ORDERS_BOARD_ID
+from app.services.analytics import filter_by_sector, filter_by_quarter
+
 
 app = FastAPI()
 
@@ -27,12 +29,22 @@ async def pipeline_summary():
     return summary
 
 @app.get("/pipeline-by-sector")
-async def pipeline_by_sector(sector: str):
+async def pipeline_by_sector(
+    sector: str = None,
+    year: int = None,
+    quarter: int = None
+):
     data = await fetch_board_items(DEALS_BOARD_ID)
     board = data["data"]["boards"][0]
     normalized = normalize_board_response(board)
 
-    filtered = filter_by_sector(normalized, sector)
+    filtered = normalized
+
+    if sector:
+        filtered = filter_by_sector(filtered, sector)
+
+    if year and quarter:
+        filtered = filter_by_quarter(filtered, year, quarter)
 
     summary = compute_pipeline_summary(filtered)
 

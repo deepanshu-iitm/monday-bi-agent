@@ -53,3 +53,29 @@ def filter_by_sector(deals: List[Dict[str, Any]], sector: str):
             filtered.append(deal)
 
     return filtered
+
+def filter_by_quarter(deals: List[Dict[str, Any]], year: int, quarter: int):
+    """
+    Filters deals by year and quarter based on Tentative Close Date.
+    Quarter: 1 (Jan-Mar), 2 (Apr-Jun), 3 (Jul-Sep), 4 (Oct-Dec)
+    """
+    if not year or not quarter:
+        return deals
+
+    filtered = []
+
+    for deal in deals:
+        close_date = deal.get("Tentative Close Date")
+
+        if not close_date:
+            continue
+
+        if close_date.year != year:
+            continue
+
+        deal_quarter = (close_date.month - 1) // 3 + 1
+
+        if deal_quarter == quarter:
+            filtered.append(deal)
+
+    return filtered

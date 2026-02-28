@@ -9,6 +9,7 @@ from app.services.analytics import compute_pipeline_summary
 from app.services.analytics import filter_by_sector
 from app.services.analytics import filter_by_sector, filter_by_quarter
 from app.services.analytics import simple_intent_parser
+from app.services.llm_service import llm_intent_parser
 
 
 
@@ -88,7 +89,15 @@ async def ask_question(request: AskRequest):
     trace_steps = []
 
     # Parse intent
-    intent = simple_intent_parser(request.question)
+    trace_steps.append("Calling Gemini intent parser...")
+    intent = llm_intent_parser(request.question)
+
+    if intent:
+        trace_steps.append("Intent extracted using Gemini")
+    else:
+        intent = simple_intent_parser(request.question)
+        trace_steps.append("Gemini failed — used rule-based fallback")
+
     trace_steps.append(f"Parsed intent: {intent}")
 
     # Fetch data

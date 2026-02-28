@@ -1,0 +1,234 @@
+.header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.header p {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 1.5rem 2rem;
+  max-width: 52rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.message {
+  margin-bottom: 1.25rem;
+}
+
+.message .role {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.message.user .role {
+  color: var(--accent);
+}
+
+.message .content {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.message .trace {
+  margin-top: 0.75rem;
+  background: var(--trace-bg);
+  border: 1px solid var(--trace-border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.message .trace-title {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.message .trace ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.message .trace li {
+  margin-bottom: 0.25rem;
+}
+
+.message .trace li:last-child {
+  margin-bottom: 0;
+}
+
+.message .intent {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.message .intent code {
+  background: var(--surface-hover);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.api-response-wrap {
+  margin-top: 0.75rem;
+}
+
+.btn-api-response {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-api-response:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+.api-response-json {
+  margin: 0.5rem 0 0;
+  padding: 1rem;
+  background: var(--trace-bg);
+  border: 1px solid var(--trace-border);
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  overflow-x: auto;
+  max-height: 20rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.input-area {
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.input-wrap {
+  max-width: 52rem;
+  margin: 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+.input-wrap textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 120px;
+  padding: 0.65rem 1rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  resize: none;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.input-wrap textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.input-wrap textarea:focus {
+  border-color: var(--accent);
+}
+
+.input-wrap button {
+  padding: 0.65rem 1.25rem;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.input-wrap button:hover {
+  background: #e6354d;
+}
+
+.input-wrap button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.loading .dot {
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 0.8s ease-in-out infinite;
+}
+
+.loading .dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loading .dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.error {
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin: 0.5rem auto 0;
+  max-width: 52rem;
+}

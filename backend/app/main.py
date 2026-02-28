@@ -1,4 +1,9 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional
 from app.services.monday_client import fetch_board_items
@@ -12,7 +17,28 @@ from app.services.llm_service import llm_intent_parser
 from app.services.analytics import generate_founder_summary
 from app.services.analytics import compute_revenue_summary
 
-app = FastAPI()
+app = FastAPI(title="Monday.com BI Agent API")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+@app.get("/")
+async def root():
+    index_path = STATIC_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path)
+    return {"message": "Monday.com BI Agent API", "docs": "/docs"}
+
+
 last_intent = {}
 
 class AskRequest(BaseModel):
@@ -127,6 +153,7 @@ async def ask_question(request: AskRequest):
                 "question": request.question,
                 "intent": intent,
                 "answer": "Which year and quarter are you referring to? (Example: Q1 2026)",
+                "result": None,
                 "trace": trace_steps
             }
 

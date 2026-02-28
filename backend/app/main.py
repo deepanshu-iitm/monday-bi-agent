@@ -34,18 +34,43 @@ async def pipeline_by_sector(
     year: int = None,
     quarter: int = None
 ):
+    trace_steps = []
+
+    # Fetch
     data = await fetch_board_items(DEALS_BOARD_ID)
+    trace_steps.append("Fetched deals board via monday.com API")
+
     board = data["data"]["boards"][0]
+
+    # Normalize
     normalized = normalize_board_response(board)
+    trace_steps.append(f"Normalized {len(normalized)} records")
 
     filtered = normalized
 
+    # Sector filter
     if sector:
+        before_count = len(filtered)
         filtered = filter_by_sector(filtered, sector)
+        trace_steps.append(
+            f"Applied sector filter '{sector}' → {len(filtered)} of {before_count} records"
+        )
 
+    # Quarter filter
     if year and quarter:
+        before_count = len(filtered)
         filtered = filter_by_quarter(filtered, year, quarter)
+        trace_steps.append(
+            f"Applied quarter filter Q{quarter} {year} → {len(filtered)} of {before_count} records"
+        )
 
+    # Compute
     summary = compute_pipeline_summary(filtered)
+    trace_steps.append("Computed deterministic pipeline summary")
 
-    return summary
+    return {
+        "result": summary,
+        "trace": {
+            "steps": trace_steps
+        }
+    }

@@ -34,3 +34,22 @@ def compute_pipeline_summary(deals: List[Dict[str, Any]]) -> Dict[str, Any]:
         "sector_distribution": dict(sector_distribution),
         "excluded_null_value_count": excluded_null_value
     }
+
+def filter_by_sector(deals: List[Dict[str, Any]], sector: str):
+    """
+    Filters deals by sector (case-insensitive).
+    """
+    if not sector:
+        return deals
+
+    sector = sector.lower().strip()
+
+    filtered = []
+
+    for deal in deals:
+        deal_sector = deal.get("Sector/service")
+
+        if deal_sector and sector in deal_sector:
+            filtered.append(deal)
+
+    return filtered

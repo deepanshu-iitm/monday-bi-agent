@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import Optional
 from app.services.monday_client import fetch_board_items
 from app.config import DEALS_BOARD_ID
 from app.config import WORK_ORDERS_BOARD_ID
@@ -6,9 +8,15 @@ from app.services.normalization import normalize_board_response
 from app.services.analytics import compute_pipeline_summary
 from app.services.analytics import filter_by_sector
 from app.services.analytics import filter_by_sector, filter_by_quarter
+from app.services.analytics import simple_intent_parser
+
+
 
 
 app = FastAPI()
+
+class AskRequest(BaseModel):
+    question: str
 
 @app.get("/test-deals")
 async def test_deals():
@@ -73,4 +81,48 @@ async def pipeline_by_sector(
         "trace": {
             "steps": trace_steps
         }
+    }
+
+@app.post("/ask")
+async def ask_question(request: AskRequest):
+    trace_steps = []
+
+    # Parse intent
+    intent = simple_intent_parser(request.question)
+    trace_steps.append(f"Parsed intent: {intent}")
+
+    # Fetch data
+    data = await fetch_board_items(DEALS_BOARD_ID)
+    trace_steps.append("Fetched deals board via monday.com API")
+
+    board = data["data"]["boards"][0]
+    normalized = normalize_board_response(board)
+    trace_steps.append(f"Normalized {len(normalized)} records")
+
+    filtered = normalized
+
+    # Apply sector filter
+    if intent["sector"]:
+        before = len(filtered)
+        filtered = filter_by_sector(filtered, intent["sector"])
+        trace_steps.append(
+            f"Applied sector filter '{intent['sector']}' → {len(filtered)} of {before}"
+        )
+
+    # Apply quarter filter
+    if intent["year"] and intent["quarter"]:
+        before = len(filtered)
+        filtered = filter_by_quarter(filtered, intent["year"], intent["quarter"])
+        trace_steps.append(
+            f"Applied quarter filter Q{intent['quarter']} {intent['year']} → {len(filtered)} of {before}"
+        )
+
+    summary = compute_pipeline_summary(filtered)
+    trace_steps.append("Computed deterministic pipeline summary")
+
+    return {
+        "question": request.question,
+        "intent": intent,
+        "result": summary,
+        "trace": trace_steps
     }

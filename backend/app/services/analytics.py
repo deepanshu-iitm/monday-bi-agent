@@ -79,3 +79,54 @@ def filter_by_quarter(deals: List[Dict[str, Any]], year: int, quarter: int):
             filtered.append(deal)
 
     return filtered
+
+def simple_intent_parser(question: str):
+    """
+    Very basic rule-based parser.
+    Extracts sector keywords and quarter references.
+    """
+    question_lower = question.lower()
+
+    sector = None
+    year = None
+    quarter = None
+
+    # Sector detection 
+    known_sectors = [
+        "mining",
+        "powerline",
+        "renewables",
+        "railways",
+        "construction",
+        "aviation",
+        "manufacturing",
+        "tender",
+        "dsp",
+    ]
+
+    for s in known_sectors:
+        if s in question_lower:
+            sector = s
+            break
+
+    # Quarter detection
+    if "q1" in question_lower:
+        quarter = 1
+    elif "q2" in question_lower:
+        quarter = 2
+    elif "q3" in question_lower:
+        quarter = 3
+    elif "q4" in question_lower:
+        quarter = 4
+
+    # Year detection (basic 4-digit scan)
+    import re
+    year_match = re.search(r"\b(20\d{2})\b", question_lower)
+    if year_match:
+        year = int(year_match.group(1))
+
+    return {
+        "sector": sector,
+        "year": year,
+        "quarter": quarter
+    }

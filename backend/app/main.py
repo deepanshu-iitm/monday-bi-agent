@@ -10,9 +10,7 @@ from app.services.analytics import filter_by_sector
 from app.services.analytics import filter_by_sector, filter_by_quarter
 from app.services.analytics import simple_intent_parser
 from app.services.llm_service import llm_intent_parser
-
-
-
+from app.services.analytics import generate_founder_summary
 
 app = FastAPI()
 
@@ -129,9 +127,12 @@ async def ask_question(request: AskRequest):
     summary = compute_pipeline_summary(filtered)
     trace_steps.append("Computed deterministic pipeline summary")
 
+    answer = generate_founder_summary(intent, summary)
+
     return {
         "question": request.question,
         "intent": intent,
+        "answer": answer,
         "result": summary,
         "trace": trace_steps
     }

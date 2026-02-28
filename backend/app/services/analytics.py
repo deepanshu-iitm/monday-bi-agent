@@ -130,3 +130,41 @@ def simple_intent_parser(question: str):
         "year": year,
         "quarter": quarter
     }
+
+def generate_founder_summary(intent: dict, summary: dict) -> str:
+    sector = intent.get("sector")
+    year = intent.get("year")
+    quarter = intent.get("quarter")
+
+    total_value = summary["total_pipeline_value"]
+    deal_count = summary["deal_count"]
+    stage_distribution = summary["stage_distribution"]
+
+    stage_highlights = sorted(
+        stage_distribution.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )[:2]
+
+    stage_text = ", ".join(
+        [f"{stage} ({count})" for stage, count in stage_highlights]
+    )
+
+    parts = []
+
+    if sector and year and quarter:
+        parts.append(
+            f"In Q{quarter} {year}, the {sector} sector has {deal_count} deals "
+            f"with a total pipeline value of ₹{total_value:,.0f}."
+        )
+    else:
+        parts.append(
+            f"There are {deal_count} deals with a total pipeline value of ₹{total_value:,.0f}."
+        )
+
+    if stage_text:
+        parts.append(
+            f"Most deals are concentrated in {stage_text} stages."
+        )
+
+    return " ".join(parts)

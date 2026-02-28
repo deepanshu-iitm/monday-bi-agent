@@ -6,11 +6,11 @@ from app.config import DEALS_BOARD_ID
 from app.config import WORK_ORDERS_BOARD_ID
 from app.services.normalization import normalize_board_response
 from app.services.analytics import compute_pipeline_summary
-from app.services.analytics import filter_by_sector
 from app.services.analytics import filter_by_sector, filter_by_quarter
 from app.services.analytics import simple_intent_parser
 from app.services.llm_service import llm_intent_parser
 from app.services.analytics import generate_founder_summary
+from app.services.analytics import compute_revenue_summary
 
 app = FastAPI()
 
@@ -23,6 +23,13 @@ async def test_deals():
     board = data["data"]["boards"][0]
     normalized = normalize_board_response(board)
 
+    return normalized[:5]
+
+@app.get("/test-work-orders")
+async def test_work_orders():
+    data = await fetch_board_items(WORK_ORDERS_BOARD_ID)
+    board = data["data"]["boards"][0]
+    normalized = normalize_board_response(board)
     return normalized[:5]
 
 @app.get("/pipeline-summary")
@@ -124,15 +131,55 @@ async def ask_question(request: AskRequest):
             f"Applied quarter filter Q{intent['quarter']} {intent['year']} → {len(filtered)} of {before}"
         )
 
-    summary = compute_pipeline_summary(filtered)
-    trace_steps.append("Computed deterministic pipeline summary")
+    metric = (intent.get("metric") or "").lower()
 
-    answer = generate_founder_summary(intent, summary)
+    if "revenue" in metric:
+        data = await fetch_board_items(WORK_ORDERS_BOARD_ID)
+        trace_steps.append("Fetched work orders board via monday.com API")
 
+        board = data["data"]["boards"][0]
+        normalized_wo = normalize_board_response(board)
+        trace_steps.append(f"Normalized {len(normalized_wo)} work order records")
+
+        summary = compute_revenue_summary(normalized_wo)
+        trace_steps.append("Computed deterministic revenue summary")
+
+        answer = (
+            f"Total billed: ₹{summary['total_billed']:,.0f}. "
+            f"Collected: ₹{summary['total_collected']:,.0f}. "
+            f"Outstanding receivables: ₹{summary['total_receivable']:,.0f}. "
+            f"Collection rate: {summary['collection_rate_percent']}%."
+        )
+
+    else:
+        summary = compute_pipeline_summary(filtered)
+        trace_steps.append("Computed deterministic pipeline summary")
+
+        answer = generate_founder_summary(intent, summary)
+        
     return {
         "question": request.question,
         "intent": intent,
         "answer": answer,
+        "result": summary,
+        "trace": trace_steps
+    }
+
+@app.get("/revenue-summary")
+async def revenue_summary():
+    trace_steps = []
+
+    data = await fetch_board_items(WORK_ORDERS_BOARD_ID)
+    trace_steps.append("Fetched work orders board via monday.com API")
+
+    board = data["data"]["boards"][0]
+    normalized = normalize_board_response(board)
+    trace_steps.append(f"Normalized {len(normalized)} work order records")
+
+    summary = compute_revenue_summary(normalized)
+    trace_steps.append("Computed deterministic revenue summary")
+
+    return {
         "result": summary,
         "trace": trace_steps
     }

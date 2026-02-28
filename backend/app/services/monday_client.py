@@ -34,7 +34,7 @@ query ($board_id: [ID!]) {
         "Content-Type": "application/json"
     }
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.post(
             MONDAY_API_URL,
             json={"query": query, "variables": {"board_id": board_id}},

@@ -168,3 +168,36 @@ def generate_founder_summary(intent: dict, summary: dict) -> str:
         )
 
     return " ".join(parts)
+
+def compute_revenue_summary(work_orders: list) -> dict:
+    total_billed = 0.0
+    total_collected = 0.0
+    total_receivable = 0.0
+
+    excluded_nulls = 0
+
+    for wo in work_orders:
+        try:
+            billed = float(wo.get("Billed Value in Rupees (Incl of GST.) (Masked)") or 0)
+            collected = float(wo.get("Collected Amount in Rupees (Incl of GST) (Masked)") or 0)
+            receivable = float(wo.get("Amount Receivable (Masked)") or 0)
+        except (ValueError, TypeError):
+            excluded_nulls += 1
+            continue
+
+        total_billed += billed
+        total_collected += collected
+        total_receivable += receivable
+
+    collection_rate = (
+        (total_collected / total_billed) * 100
+        if total_billed > 0 else 0
+    )
+
+    return {
+        "total_billed": total_billed,
+        "total_collected": total_collected,
+        "total_receivable": total_receivable,
+        "collection_rate_percent": round(collection_rate, 2),
+        "excluded_null_rows": excluded_nulls
+    }
